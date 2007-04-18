@@ -8,7 +8,7 @@
 
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
-Version:	3.0.13
+Version:	3.0.14
 Release:	%mkrel 1
 Group:		Development/PHP
 License:	PHP License
@@ -151,5 +151,3 @@ fi
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/httpd/conf/webapps.d/%{name}.conf
 %dir /var/www/%{name}
 /var/www/%{name}/index.php
-
-
