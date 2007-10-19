@@ -8,12 +8,12 @@
 
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
-Version:	3.0.14
-Release:	%mkrel 5
+Version:	3.0.15
+Release:	%mkrel 1
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
-Source0:	http://pecl.php.net/get/APC-%{version}.tar.bz2
+Source0:	http://pecl.php.net/get/APC-%{version}.tgz
 Source1:	apc.ini
 BuildRequires:  php-devel >= 3:5.2.0
 Conflicts:	php-afterburner php-mmcache php-eaccelerator
