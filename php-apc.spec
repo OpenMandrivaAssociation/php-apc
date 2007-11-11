@@ -9,7 +9,7 @@
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
 Version:	3.0.15
-Release:	%mkrel 1
+Release:	%mkrel 2
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
@@ -120,14 +120,14 @@ install -m0644 %{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf/webapps.d/
 install -m0644 apc.php %{buildroot}/var/www/%{name}/index.php
 
 %post
-if [ -f %{_var}/lock/subsys/httpd ]; then
-    %{_initrddir}/httpd restart 1>&2;
+if [ -f /var/lock/subsys/httpd ]; then
+    %{_initrddir}/httpd restart >/dev/null || :
 fi
 
 %postun
 if [ "$1" = "0" ]; then
-    if [ -f %{_var}/lock/subsys/httpd ]; then
-	%{_initrddir}/httpd restart 1>&2
+    if [ -f /var/lock/subsys/httpd ]; then
+	%{_initrddir}/httpd restart >/dev/null || :
     fi
 fi
 
