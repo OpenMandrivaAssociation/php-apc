@@ -18,7 +18,6 @@ Source1:	apc.ini
 BuildRequires:  php-devel >= 3:5.2.0
 Conflicts:	php-afterburner php-mmcache php-eaccelerator
 Epoch:		1
-BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 
 %description
 APC was conceived of to provide a way of boosting the performance of PHP on
