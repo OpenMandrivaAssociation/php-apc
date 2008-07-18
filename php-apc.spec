@@ -1,3 +1,5 @@
+%define _disable_ld_no_undefined 1
+
 %define realname apc (Alternative PHP Cache)
 %define modname apc
 %define dirname %{modname}
