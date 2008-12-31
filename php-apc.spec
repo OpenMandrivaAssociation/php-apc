@@ -10,8 +10,8 @@
 
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
-Version:	3.0.19
-Release:	%mkrel 4
+Version:	3.1.2
+Release:	%mkrel 1
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
@@ -30,20 +30,6 @@ eliminated. There are commercial products which provide this functionality, but
 they are neither open-source nor free. Our goal was to level the playing field
 by providing an implementation that allows greater flexibility and is
 universally accessible. 
-
-We also wanted the cache to provide visibility into it's own workings and those
-of PHP, so time was invested in providing internal diagnostic tools which allow
-for cache diagnostics and maintenance. 
-
-Thus arrived APC. Since we were committed to developing a product which can
-easily grow with new version of PHP, we implemented it as a zend extension,
-allowing it to either be compiled into PHP or added post facto as a drop in
-module. As with PHP, it is available completely free for commercial
-and non-commercial use, under the same terms as PHP itself.
-
-APC has been tested under PHP 4.0.3, 4.0.3pl1 and 4.0.4. It currently compiles
-under Linux and FreeBSD. Patches for ports to other OSs/ PHP versions are
-welcome.
 
 NOTE!: %{name} has to be loaded last, very important!
 
@@ -89,7 +75,6 @@ ln -s ../configure .
     --enable-apc-filehits \
     --disable-apc-pthreadmutex \
     --disable-apc-sem \
-    --disable-apc-futex \
     --disable-apc-spinlocks \
     --enable-apc-mmap
 
@@ -104,7 +89,6 @@ ln -s ../configure .
     --enable-apc-filehits \
     --disable-apc-pthreadmutex \
     --disable-apc-mmap \
-    --disable-apc-futex \
     --disable-apc-spinlocks \
     --enable-apc-sem
 
@@ -119,7 +103,6 @@ ln -s ../configure .
     --enable-apc-filehits \
     --disable-apc-pthreadmutex \
     --disable-apc-mmap \
-    --disable-apc-futex \
     --disable-apc-sem \
     --disable-apc-mmap \
     --enable-apc-spinlocks
@@ -134,7 +117,6 @@ ln -s ../configure .
     --enable-%{modname}=shared,%{_prefix} \
     --enable-apc-filehits \
     --disable-apc-mmap \
-    --disable-apc-futex \
     --disable-apc-spinlocks \
     --disable-apc-sem \
     --disable-apc-mmap
@@ -143,7 +125,7 @@ ln -s ../configure .
 popd
 
 %install
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+rm -rf %{buildroot}
 
 install -d %{buildroot}%{_libdir}/php/extensions
 install -d %{buildroot}%{_sysconfdir}/php.d
@@ -190,7 +172,7 @@ fi
 %_postun_webapp
 
 %clean
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
