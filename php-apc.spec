@@ -10,13 +10,14 @@
 
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
-Version:	3.1.2
-Release:	%mkrel 8
+Version:	3.1.3p1
+Release:	%mkrel 1
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
 Source0:	http://pecl.php.net/get/APC-%{version}.tgz
 Source1:	apc.ini
+Patch0:		APC-3.1.3p1-default_lock_dir.diff
 BuildRequires:  php-devel >= 3:5.2.0
 Conflicts:	php-afterburner php-mmcache php-eaccelerator
 Epoch:		1
@@ -60,6 +61,8 @@ http://localhost/%{name}/
 %setup -q -n APC-%{version}
 [ "../package*.xml" != "/" ] && mv ../package*.xml .
 
+%patch0 -p0
+
 cp %{SOURCE1} %{inifile}
 
 %build
@@ -76,7 +79,8 @@ ln -s ../configure .
     --disable-apc-pthreadmutex \
     --disable-apc-sem \
     --disable-apc-spinlocks \
-    --enable-apc-mmap
+    --enable-apc-mmap \
+    --enable-memory-protection
 
 %make
 popd
@@ -90,7 +94,8 @@ ln -s ../configure .
     --disable-apc-pthreadmutex \
     --disable-apc-mmap \
     --disable-apc-spinlocks \
-    --enable-apc-sem
+    --enable-apc-sem \
+    --enable-memory-protection
 
 %make
 popd
@@ -102,9 +107,9 @@ ln -s ../configure .
     --enable-%{modname}=shared,%{_prefix} \
     --enable-apc-filehits \
     --disable-apc-pthreadmutex \
-    --disable-apc-mmap \
     --disable-apc-sem \
     --disable-apc-mmap \
+    --disable-memory-protection \
     --enable-apc-spinlocks
 
 %make
@@ -116,10 +121,10 @@ ln -s ../configure .
 %configure2_5x \
     --enable-%{modname}=shared,%{_prefix} \
     --enable-apc-filehits \
-    --disable-apc-mmap \
     --disable-apc-spinlocks \
+    --disable-apc-mmap \
     --disable-apc-sem \
-    --disable-apc-mmap
+    --disable-memory-protection
 
 %make
 popd
@@ -131,6 +136,7 @@ install -d %{buildroot}%{_libdir}/php/extensions
 install -d %{buildroot}%{_sysconfdir}/php.d
 install -d %{buildroot}/var/www/%{name}
 install -d %{buildroot}%{_sysconfdir}/httpd/conf/webapps.d
+install -d %{buildroot}/var/lib/php-apc
 
 install -m0644 %{inifile} %{buildroot}%{_sysconfdir}/php.d/%{inifile}
 
@@ -182,6 +188,7 @@ rm -rf %{buildroot}
 %attr(0755,root,root) %{_libdir}/php/extensions/apc-sem.so
 %attr(0755,root,root) %{_libdir}/php/extensions/apc-spinlocks.so
 %attr(0755,root,root) %{_libdir}/php/extensions/apc-pthread.so
+%attr(0755,apache,apache) /var/lib/php-apc
 
 %files admin
 %defattr(-,root,root)
