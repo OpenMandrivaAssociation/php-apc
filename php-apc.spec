@@ -11,7 +11,7 @@
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
 Version:	3.1.3p1
-Release:	%mkrel 4
+Release:	%mkrel 5
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
@@ -44,8 +44,10 @@ This package comes with four different flavours of APC (use only one of them):
 %package	admin
 Summary:	Web admin GUI for %{realname}
 Group:		Development/PHP
-Requires(pre): rpm-helper
-Requires(postun): rpm-helper
+%if %mdkversion < 201010
+Requires(post):   rpm-helper
+Requires(postun):   rpm-helper
+%endif
 Requires:	apache-mod_php
 Requires:	%{name}
 
@@ -135,7 +137,6 @@ rm -rf %{buildroot}
 install -d %{buildroot}%{_libdir}/php/extensions
 install -d %{buildroot}%{_sysconfdir}/php.d
 install -d %{buildroot}/var/www/%{name}
-install -d %{buildroot}%{_sysconfdir}/httpd/conf/webapps.d
 install -d %{buildroot}/var/lib/php-apc
 
 install -m0644 %{inifile} %{buildroot}%{_sysconfdir}/php.d/%{inifile}
@@ -145,18 +146,18 @@ install -m0755 build-apc-sem/modules/apc.so %{buildroot}%{_libdir}/php/extension
 install -m0755 build-apc-spinlocks/modules/apc.so %{buildroot}%{_libdir}/php/extensions/apc-spinlocks.so
 install -m0755 build-apc-pthread/modules/apc.so %{buildroot}%{_libdir}/php/extensions/apc-pthread.so
 
-cat > %{name}.conf << EOF
+install -d -m 755 %{buildroot}%{webappconfdir}
+cat > %{buildroot}%{webappconfdir}/%{name}.conf << EOF
 Alias /%{name} /var/www/%{name}
 
 <Directory "/var/www/%{name}">
     Order deny,allow
     Deny from all
     Allow from 127.0.0.1
-    ErrorDocument 403 "Access denied per %{_sysconfdir}/httpd/conf/webapps.d/%{name}.conf"
+    ErrorDocument 403 "Access denied per %{webappconfdir}/%{name}.conf"
 </Directory>
 EOF
 
-install -m0644 %{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf/webapps.d/
 install -m0644 apc.php %{buildroot}/var/www/%{name}/index.php
 
 %post
@@ -172,10 +173,14 @@ if [ "$1" = "0" ]; then
 fi
 
 %post admin
+%if %mdkversion < 201010
 %_post_webapp
+%endif
 
 %postun admin
+%if %mdkversion < 201010
 %_postun_webapp
+%endif
 
 %clean
 rm -rf %{buildroot}
@@ -192,6 +197,6 @@ rm -rf %{buildroot}
 
 %files admin
 %defattr(-,root,root)
-%attr(0644,root,root) %config(noreplace) %{_sysconfdir}/httpd/conf/webapps.d/%{name}.conf
+%config(noreplace) %{webappconfdir}/%{name}.conf
 %dir /var/www/%{name}
 /var/www/%{name}/index.php
