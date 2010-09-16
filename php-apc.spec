@@ -10,8 +10,8 @@
 
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
-Version:	3.1.3p1
-Release:	%mkrel 8
+Version:	3.1.4
+Release:	%mkrel 1
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
@@ -82,7 +82,7 @@ ln -s ../configure .
     --disable-apc-sem \
     --disable-apc-spinlocks \
     --enable-apc-mmap \
-    --enable-memory-protection
+    --enable-apc-memprotect
 
 %make
 popd
@@ -97,7 +97,7 @@ ln -s ../configure .
     --disable-apc-mmap \
     --disable-apc-spinlocks \
     --enable-apc-sem \
-    --enable-memory-protection
+    --enable-apc-memprotect
 
 %make
 popd
@@ -111,7 +111,7 @@ ln -s ../configure .
     --disable-apc-pthreadmutex \
     --disable-apc-sem \
     --disable-apc-mmap \
-    --disable-memory-protection \
+    --disable-apc-memprotect \
     --enable-apc-spinlocks
 
 %make
@@ -126,7 +126,7 @@ ln -s ../configure .
     --disable-apc-spinlocks \
     --disable-apc-mmap \
     --disable-apc-sem \
-    --disable-memory-protection
+    --disable-apc-memprotect
 
 %make
 popd
