@@ -10,8 +10,8 @@
 
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
-Version:	3.1.6
-Release:	%mkrel 3
+Version:	3.1.7
+Release:	%mkrel 1
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
@@ -79,6 +79,7 @@ ln -s ../configure .
     --enable-%{modname}=shared,%{_prefix} \
     --enable-apc-filehits \
     --disable-apc-pthreadmutex \
+    --disable-apc-pthreadrwlocks \
     --disable-apc-sem \
     --disable-apc-spinlocks \
     --enable-apc-mmap \
@@ -94,6 +95,7 @@ ln -s ../configure .
     --enable-%{modname}=shared,%{_prefix} \
     --enable-apc-filehits \
     --disable-apc-pthreadmutex \
+    --disable-apc-pthreadrwlocks \
     --disable-apc-mmap \
     --disable-apc-spinlocks \
     --enable-apc-sem \
@@ -109,6 +111,7 @@ ln -s ../configure .
     --enable-%{modname}=shared,%{_prefix} \
     --enable-apc-filehits \
     --disable-apc-pthreadmutex \
+    --disable-apc-pthreadrwlocks \
     --disable-apc-sem \
     --disable-apc-mmap \
     --disable-apc-memprotect \
@@ -123,11 +126,11 @@ ln -s ../configure .
 %configure2_5x \
     --enable-%{modname}=shared,%{_prefix} \
     --enable-apc-filehits \
+    --enable-apc-pthreadrwlocks \
     --disable-apc-spinlocks \
     --disable-apc-mmap \
     --disable-apc-sem \
     --disable-apc-memprotect
-
 %make
 popd
 
