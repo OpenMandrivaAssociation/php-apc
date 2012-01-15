@@ -11,7 +11,7 @@
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
 Version:	3.1.9
-Release:	%mkrel 4
+Release:	%mkrel 5
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
@@ -41,6 +41,7 @@ This package comes with four different flavours of APC (use only one of them):
  o apc-sem.so - IPC semamphore based locks
  o apc-spinlocks.so - Hardware-dependent implementation of spinlocks
  o apc-pthread.so - NPTL pthread mutex based locks
+ o apc-mmap+mutex.so - mmap (fcntl) and pthread mutex based locks
 
 %package	admin
 Summary:	Web admin GUI for %{realname}
@@ -136,6 +137,17 @@ ln -s ../configure .
 %make
 popd
 
+mkdir -p build-apc-mmap+mutex
+pushd build-apc-mmap+mutex
+ln -s ../configure .
+%configure2_5x \
+    --enable-%{modname}=shared,%{_prefix} \
+    --enable-apc-filehits \
+    --enable-apc-mmap \
+    --enable-apc-pthreadmutex
+%make
+popd
+
 %install
 rm -rf %{buildroot}
 
@@ -150,6 +162,7 @@ install -m0755 build-apc-mmap/modules/apc.so %{buildroot}%{_libdir}/php/extensio
 install -m0755 build-apc-sem/modules/apc.so %{buildroot}%{_libdir}/php/extensions/apc-sem.so
 install -m0755 build-apc-spinlocks/modules/apc.so %{buildroot}%{_libdir}/php/extensions/apc-spinlocks.so
 install -m0755 build-apc-pthread/modules/apc.so %{buildroot}%{_libdir}/php/extensions/apc-pthread.so
+install -m0755 build-apc-mmap+mutex/modules/apc.so %{buildroot}%{_libdir}/php/extensions/apc-mmap+mutex.so
 
 install -d -m 755 %{buildroot}%{webappconfdir}
 cat > %{buildroot}%{webappconfdir}/%{name}.conf << EOF
@@ -198,6 +211,7 @@ rm -rf %{buildroot}
 %attr(0755,root,root) %{_libdir}/php/extensions/apc-sem.so
 %attr(0755,root,root) %{_libdir}/php/extensions/apc-spinlocks.so
 %attr(0755,root,root) %{_libdir}/php/extensions/apc-pthread.so
+%attr(0755,root,root) %{_libdir}/php/extensions/apc-mmap+mutex.so
 %attr(0755,apache,apache) /var/lib/php-apc
 
 %files admin
