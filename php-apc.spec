@@ -10,15 +10,14 @@
 
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
-Version:	3.1.9
-Release:	%mkrel 5
+Version:	3.1.10
+Release:	%mkrel 1
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
 Source0:	http://pecl.php.net/get/APC-%{version}.tgz
 Source1:	apc.ini
 Patch0:		APC-3.1.3p1-default_lock_dir.diff
-Patch1:		APC-3.1.9-svn_fixes.diff
 BuildRequires:  php-devel >= 3:5.2.0
 Conflicts:	php-afterburner php-mmcache php-eaccelerator
 Epoch:		1
@@ -66,7 +65,6 @@ http://localhost/%{name}/
 [ "../package*.xml" != "/" ] && mv ../package*.xml .
 
 %patch0 -p0
-%patch1 -p1
 
 cp %{SOURCE1} %{inifile}
 
