@@ -1,0 +1,11 @@
+--- apc_fcntl.c	1970-01-01 10:13:08.000000000 +0100
++++ apc_fcntl.c.oden	2009-08-14 13:43:24.000000000 +0200
+@@ -40,7 +40,7 @@ int apc_fcntl_create(const char* pathnam
+ {
+     int fd;
+     if(pathname == NULL) {
+-        char lock_path[] = "/tmp/.apc.XXXXXX";
++        char lock_path[] = "/var/lib/php-apc/.apc.XXXXXX";
+         mktemp(lock_path);
+         fd = open(lock_path, O_RDWR|O_CREAT, 0666);
+         if(fd > 0 ) {
