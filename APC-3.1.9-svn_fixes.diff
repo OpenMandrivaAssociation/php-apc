@@ -1,0 +1,330 @@
+diff -Naurp APC-3.1.9/apc_bin.c APC-3.1.x/apc_bin.c
+--- APC-3.1.9/apc_bin.c	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_bin.c	2011-11-04 16:23:41.000000000 +0100
+@@ -17,7 +17,7 @@
+ 
+  */
+ 
+-/* $Id: apc_bin.c 307333 2011-01-10 09:02:13Z pajoye $ */
++/* $Id: apc_bin.c 313808 2011-07-28 06:17:10Z gopalv $ */
+ 
+ /* Creates a binary architecture specific output to a string or file containing
+  * the current cache contents for both fies and user variables.  This is accomplished
+@@ -28,6 +28,7 @@
+ #include "apc_globals.h"
+ #include "apc_bin.h"
+ #include "apc_zend.h"
++#include "apc_php.h"
+ #include "apc_sma.h"
+ #include "apc_pool.h"
+ #include "ext/standard/md5.h"
+@@ -446,7 +447,7 @@ static void apc_swizzle_zval(apc_bd_t *b
+         zend_hash_index_update(&APCG(copied_zvals), (ulong)zv, (void**)&zv, sizeof(zval*), NULL);
+     }
+ 
+-    switch(zv->type & ~IS_CONSTANT_INDEX) {
++    switch(zv->type & IS_CONSTANT_TYPE_MASK) {
+         case IS_NULL:
+         case IS_LONG:
+         case IS_DOUBLE:
+diff -Naurp APC-3.1.9/apc_cache.c APC-3.1.x/apc_cache.c
+--- APC-3.1.9/apc_cache.c	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_cache.c	2011-11-04 16:23:41.000000000 +0100
+@@ -28,7 +28,7 @@
+ 
+  */
+ 
+-/* $Id: apc_cache.c 309488 2011-03-20 23:59:42Z pajoye $ */
++/* $Id: apc_cache.c 316725 2011-09-14 09:27:39Z pajoye $ */
+ 
+ #include "apc_cache.h"
+ #include "apc_zend.h"
+@@ -314,7 +314,7 @@ apc_cache_t* apc_cache_create(int size_h
+ void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
+ {
+     DESTROY_LOCK(cache->header->lock);
+-#ifdef NONBLOCKING_LOCK_AVAILABLE
++#if NONBLOCKING_LOCK_AVAILABLE
+     DESTROY_LOCK(cache->header->wrlock);
+ #endif
+     apc_efree(cache TSRMLS_CC);
+@@ -1290,7 +1290,9 @@ zval* apc_cache_info(apc_cache_t* cache,
+                 add_next_index_zval(list, link);
+                 j++;
+             }
+-            add_next_index_long(slots, j);
++            if(j != 0) {
++                add_index_long(slots, (ulong)i, j);
++            }
+         }
+ 
+         /* For each slot pending deletion */
+diff -Naurp APC-3.1.9/apc_compile.c APC-3.1.x/apc_compile.c
+--- APC-3.1.9/apc_compile.c	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_compile.c	2011-11-04 16:23:41.000000000 +0100
+@@ -28,19 +28,16 @@
+ 
+  */
+ 
+-/* $Id: apc_compile.c 307314 2011-01-10 00:06:29Z pajoye $ */
++/* $Id: apc_compile.c 313808 2011-07-28 06:17:10Z gopalv $ */
+ 
+ #include "apc_compile.h"
+ #include "apc_globals.h"
+ #include "apc_zend.h"
++#include "apc_php.h"
+ #include "apc_string.h"
+ #include "ext/standard/php_var.h"
+ #include "ext/standard/php_smart_str.h"
+ 
+-#ifndef IS_CONSTANT_TYPE_MASK
+-#define IS_CONSTANT_TYPE_MASK (~IS_CONSTANT_INDEX)
+-#endif
+-
+ typedef void* (*ht_copy_fun_t)(void*, void*, apc_context_t* TSRMLS_DC);
+ //typedef void  (*ht_free_fun_t)(void*, apc_context_t*);
+ typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
+@@ -60,7 +57,9 @@ static zend_function* my_bitwise_copy_fu
+  */
+ static zval** my_copy_zval_ptr(zval**, const zval**, apc_context_t* TSRMLS_DC);
+ static zval* my_copy_zval(zval*, const zval*, apc_context_t* TSRMLS_DC);
++#ifndef ZEND_ENGINE_2_4
+ static znode* my_copy_znode(znode*, znode*, apc_context_t* TSRMLS_DC);
++#endif
+ static zend_op* my_copy_zend_op(zend_op*, zend_op*, apc_context_t* TSRMLS_DC);
+ static zend_function* my_copy_function(zend_function*, zend_function*, apc_context_t* TSRMLS_DC);
+ static zend_function_entry* my_copy_function_entry(zend_function_entry*, const zend_function_entry*, apc_context_t* TSRMLS_DC);
+@@ -93,9 +92,11 @@ static void my_fixup_property_info( Buck
+  * defined/overridden in the 'current' class and not inherited.
+  */
+ static int my_check_copy_function(Bucket* src, va_list args);
+-static int my_check_copy_default_property(Bucket* p, va_list args);
+ static int my_check_copy_property_info(Bucket* src, va_list args);
++#ifndef ZEND_ENGINE_2_4
++static int my_check_copy_default_property(Bucket* p, va_list args);
+ static int my_check_copy_static_member(Bucket* src, va_list args);
++#endif
+ static int my_check_copy_constant(Bucket* src, va_list args);
+ 
+ /* }}} */
+@@ -947,6 +948,8 @@ static APC_HOTSPOT HashTable* my_copy_ha
+ 
+     dst->pListTail = newp;
+ 
++    zend_hash_internal_pointer_reset(dst);
++
+     return dst;
+ }
+ /* }}} */
+@@ -1694,6 +1697,7 @@ zend_class_entry* apc_copy_class_entry_f
+     /* Deep-copy the class properties, because they will be modified */
+ 
+ #ifdef ZEND_ENGINE_2_4
++    dst->name = apc_string_pmemcpy((char*)src->name, src->name_length+1, ctxt->pool TSRMLS_CC); 
+ 	dst->default_properties_count = src->default_properties_count;
+     if (src->default_properties_count) {
+         dst->default_properties_table = (zval**) apc_php_malloc((sizeof(zval*) * src->default_properties_count) TSRMLS_CC);
+diff -Naurp APC-3.1.9/apc_iterator.c APC-3.1.x/apc_iterator.c
+--- APC-3.1.9/apc_iterator.c	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_iterator.c	2011-11-04 16:23:41.000000000 +0100
+@@ -17,7 +17,7 @@
+ 
+  */
+ 
+-/* $Id: apc_iterator.c 310138 2011-04-11 11:02:48Z gopalv $ */
++/* $Id: apc_iterator.c 313801 2011-07-27 23:04:39Z gopalv $ */
+ 
+ #include "php_apc.h"
+ #include "apc_iterator.h"
+@@ -217,6 +217,9 @@ static zend_object_value apc_iterator_cr
+     iterator->obj.ce = ce;
+     ALLOC_HASHTABLE(iterator->obj.properties);
+     zend_hash_init(iterator->obj.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
++#ifdef ZEND_ENGINE_2_4
++    iterator->obj.properties_table = NULL;
++#endif
+     iterator->obj.guards = NULL;
+     iterator->initialized = 0;
+     retval.handle = zend_objects_store_put(iterator, apc_iterator_destroy, apc_iterator_free, NULL TSRMLS_CC);
+diff -Naurp APC-3.1.9/apc_lock.h APC-3.1.x/apc_lock.h
+--- APC-3.1.9/apc_lock.h	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_lock.h	2011-11-04 16:23:41.000000000 +0100
+@@ -27,7 +27,7 @@
+ 
+  */
+ 
+-/* $Id: apc_lock.h 309203 2011-03-14 06:47:16Z pajoye $ */
++/* $Id: apc_lock.h 311339 2011-05-22 17:18:49Z gopalv $ */
+ 
+ #ifndef APC_LOCK
+ #define APC_LOCK
+@@ -154,7 +154,7 @@
+ # define apc_lck_nb_lock(a)    apc_fcntl_nonblocking_lock(a TSRMLS_CC)
+ # define apc_lck_rdlock(a)     apc_fcntl_rdlock(a TSRMLS_CC)
+ # define apc_lck_unlock(a)     apc_fcntl_unlock(a TSRMLS_CC)
+-# define apc_lck_rdunlock(a)   apc_fcntl_unlock(&a TSRMLS_CC)
++# define apc_lck_rdunlock(a)   apc_fcntl_unlock(a TSRMLS_CC)
+ #endif
+ 
+ #endif
+diff -Naurp APC-3.1.9/apc_main.c APC-3.1.x/apc_main.c
+--- APC-3.1.9/apc_main.c	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_main.c	2011-11-04 16:23:41.000000000 +0100
+@@ -28,7 +28,7 @@
+ 
+  */
+ 
+-/* $Id: apc_main.c 309002 2011-03-07 19:50:18Z pajoye $ */
++/* $Id: apc_main.c 313800 2011-07-27 22:30:28Z gopalv $ */
+ 
+ #include "apc_php.h"
+ #include "apc_main.h"
+@@ -887,14 +887,14 @@ int apc_module_shutdown(TSRMLS_D)
+         apc_cache_release(apc_cache, cache_entry TSRMLS_CC);
+     }
+ 
+-    apc_cache_destroy(apc_cache TSRMLS_CC);
+-    apc_cache_destroy(apc_user_cache TSRMLS_CC);
+-    apc_sma_cleanup(TSRMLS_C);
+-
+ #ifdef ZEND_ENGINE_2_4
+     apc_interned_strings_shutdown(TSRMLS_C);
+ #endif
+ 
++    apc_cache_destroy(apc_cache TSRMLS_CC);
++    apc_cache_destroy(apc_user_cache TSRMLS_CC);
++    apc_sma_cleanup(TSRMLS_C);
++
+     APCG(initialized) = 0;
+     return 0;
+ }
+diff -Naurp APC-3.1.9/apc_php.h APC-3.1.x/apc_php.h
+--- APC-3.1.9/apc_php.h	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_php.h	2011-11-04 16:23:41.000000000 +0100
+@@ -29,7 +29,7 @@
+ 
+  */
+ 
+-/* $Id: apc_php.h 307048 2011-01-03 23:53:17Z kalle $ */
++/* $Id: apc_php.h 313808 2011-07-28 06:17:10Z gopalv $ */
+ 
+ #ifndef APC_PHP_H
+ #define APC_PHP_H
+@@ -63,6 +63,10 @@
+ #include "zend_vm.h"
+ #endif
+ 
++#ifndef IS_CONSTANT_TYPE_MASK
++#define IS_CONSTANT_TYPE_MASK (~IS_CONSTANT_INDEX)
++#endif
++
+ #include "rfc1867.h"
+ 
+ #endif
+diff -Naurp APC-3.1.9/apc_string.c APC-3.1.x/apc_string.c
+--- APC-3.1.9/apc_string.c	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_string.c	2011-11-04 16:23:41.000000000 +0100
+@@ -25,7 +25,7 @@
+ 
+  */
+ 
+-/* $Id: $ */
++/* $Id: apc_string.c 313845 2011-07-28 12:06:24Z dmitry $ */
+ 
+ #include "apc.h"
+ #include "apc_globals.h"
+@@ -146,6 +146,10 @@ static void apc_copy_internal_strings(TS
+             p->arKey = apc_new_interned_string(p->arKey, p->nKeyLength TSRMLS_CC);
+         }
+ 
++		if (ce->name) {
++			ce->name = apc_new_interned_string(ce->name, ce->name_length+1 TSRMLS_CC);
++		}
++
+         q = ce->properties_info.pListHead;
+         while (q) {
+             zend_property_info *info = (zend_property_info*)(q->pData);
+diff -Naurp APC-3.1.9/apc_windows_srwlock_kernel.c APC-3.1.x/apc_windows_srwlock_kernel.c
+--- APC-3.1.9/apc_windows_srwlock_kernel.c	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/apc_windows_srwlock_kernel.c	2011-11-04 16:23:41.000000000 +0100
+@@ -81,7 +81,15 @@ apc_windows_cs_rwlock_t *apc_windows_cs_
+ 
+ void apc_windows_cs_destroy(apc_windows_cs_rwlock_t *lock)
+ {
+-    pRtlDeleteResource(lock);
++    __try
++    {
++        pRtlDeleteResource(lock);
++    }
++        __except(GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
++               EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
++    {
++        /* Ignore exception (resource was freed during shutdown of another thread) */
++    }
+     FreeLibrary(ntdll);
+     return;
+ }
+diff -Naurp APC-3.1.9/config.m4 APC-3.1.x/config.m4
+--- APC-3.1.9/config.m4	2011-05-15 00:14:56.000000000 +0200
++++ APC-3.1.x/config.m4	2011-11-04 16:23:41.000000000 +0100
+@@ -1,5 +1,5 @@
+ dnl
+-dnl $Id: config.m4 307438 2011-01-13 14:20:21Z gopalv $
++dnl $Id: config.m4 313810 2011-07-28 06:45:03Z rasmus $
+ dnl
+ 
+ PHP_ARG_ENABLE(apc, whether to enable APC support,
+@@ -177,7 +177,7 @@ if test "$PHP_APC_PTHREADRWLOCK" != "no"
+ 	LIBS="$orig_LIBS"
+ fi
+ 
+-	AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_APC_GCC_ATOMICS, [
++	AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APC_GCC_ATOMICS, [
+ 
+ 			AC_TRY_LINK([],[
+ 					int foo = 0;
+@@ -185,11 +185,11 @@ fi
+ 					__sync_bool_compare_and_swap(&foo, 0, 1);
+ 					return __sync_fetch_and_add(&foo, 1);
+ 				],
+-				[PHP_APC_GCC_ATOMICS=yes],
+-				[PHP_APC_GCC_ATOMICS=no])
++				[PHP_cv_APC_GCC_ATOMICS=yes],
++				[PHP_cv_APC_GCC_ATOMICS=no])
+ 		])
+ 
+-	if test "x${PHP_APC_GCC_ATOMICS}" != "xno"; then
++	if test "x${PHP_cv_APC_GCC_ATOMICS}" != "xno"; then
+ 			AC_DEFINE(HAVE_ATOMIC_OPERATIONS, 1,
+ 				[Define this if your target compiler supports builtin atomics])
+ 		else
+diff -Naurp APC-3.1.9/tests/apc_011.phpt APC-3.1.x/tests/apc_011.phpt
+--- APC-3.1.9/tests/apc_011.phpt	1970-01-01 01:00:00.000000000 +0100
++++ APC-3.1.x/tests/apc_011.phpt	2011-11-04 16:23:40.000000000 +0100
+@@ -0,0 +1,26 @@
++--TEST--
++APC: apc_fetch resets array pointers
++--SKIPIF--
++<?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
++--INI--
++apc.enabled=1
++apc.enable_cli=1
++apc.file_update_protection=0
++--FILE--
++<?php
++$items = array('bar', 'baz');
++
++apc_store('test', $items);
++
++$back = apc_fetch('test');
++
++var_dump(current($back));
++var_dump(current($back));
++
++?>
++===DONE===
++<?php exit(0); ?>
++--EXPECTF--
++string(3) "bar"
++string(3) "bar"
++===DONE===
