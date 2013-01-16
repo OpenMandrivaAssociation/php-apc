@@ -6,8 +6,6 @@
 %define soname %{modname}.so
 %define inifile 99_%{modname}.ini
 
-%define _requires_exceptions pear(
-
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
 Version:	3.1.12
