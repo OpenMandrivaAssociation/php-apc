@@ -9,7 +9,7 @@
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
 Version:	3.1.12
-Release:	%mkrel 1
+Release:	2
 Group:		Development/PHP
 License:	PHP License
 URL:		http://pecl.php.net/package/APC
@@ -20,7 +20,6 @@ Patch1:		APC-3.1.9-svn_fixes.diff
 BuildRequires:  php-devel >= 3:5.2.0
 Conflicts:	php-afterburner php-mmcache php-eaccelerator
 Epoch:		1
-Buildroot:	%{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 %description
 APC was conceived of to provide a way of boosting the performance of PHP on
@@ -44,10 +43,6 @@ This package comes with four different flavours of APC (use only one of them):
 %package	admin
 Summary:	Web admin GUI for %{realname}
 Group:		Development/PHP
-%if %mdkversion < 201010
-Requires(post):   rpm-helper
-Requires(postun):   rpm-helper
-%endif
 Requires:	apache-mod_php
 Requires:	%{name}
 
@@ -147,8 +142,6 @@ ln -s ../configure .
 popd
 
 %install
-rm -rf %{buildroot}
-
 install -d %{buildroot}%{_libdir}/php/extensions
 install -d %{buildroot}%{_sysconfdir}/php.d
 install -d %{buildroot}/var/www/%{name}
@@ -162,15 +155,13 @@ install -m0755 build-apc-spinlocks/modules/apc.so %{buildroot}%{_libdir}/php/ext
 install -m0755 build-apc-pthread/modules/apc.so %{buildroot}%{_libdir}/php/extensions/apc-pthread.so
 install -m0755 build-apc-mmap+mutex/modules/apc.so %{buildroot}%{_libdir}/php/extensions/apc-mmap+mutex.so
 
-install -d -m 755 %{buildroot}%{webappconfdir}
-cat > %{buildroot}%{webappconfdir}/%{name}.conf << EOF
+install -d -m 755 %{buildroot}%{_webappconfdir}
+cat > %{buildroot}%{_webappconfdir}/%{name}.conf << EOF
 Alias /%{name} /var/www/%{name}
 
 <Directory "/var/www/%{name}">
-    Order deny,allow
-    Deny from all
-    Allow from 127.0.0.1
-    ErrorDocument 403 "Access denied per %{webappconfdir}/%{name}.conf"
+    Require host 127.0.0.1
+    ErrorDocument 403 "Access denied per %{_webappconfdir}/%{name}.conf"
 </Directory>
 EOF
 
@@ -188,21 +179,7 @@ if [ "$1" = "0" ]; then
     fi
 fi
 
-%post admin
-%if %mdkversion < 201010
-%_post_webapp
-%endif
-
-%postun admin
-%if %mdkversion < 201010
-%_postun_webapp
-%endif
-
-%clean
-rm -rf %{buildroot}
-
 %files
-%defattr(-,root,root)
 %doc tests CHANGELOG INSTALL LICENSE NOTICE TECHNOTES.txt TODO package*.xml
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/php.d/%{inifile}
 %attr(0755,root,root) %{_libdir}/php/extensions/apc-mmap.so
@@ -213,8 +190,7 @@ rm -rf %{buildroot}
 %attr(0755,apache,apache) /var/lib/php-apc
 
 %files admin
-%defattr(-,root,root)
-%config(noreplace) %{webappconfdir}/%{name}.conf
+%config(noreplace) %{_webappconfdir}/%{name}.conf
 %dir /var/www/%{name}
 /var/www/%{name}/index.php
 
