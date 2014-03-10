@@ -7,8 +7,8 @@
 Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
 Epoch:		1
-Version:	3.1.12
-Release:	6
+Version:	3.1.15
+Release:	1
 Group:		Development/PHP
 License:	PHP License
 Url:		http://pecl.php.net/package/APC
@@ -55,7 +55,6 @@ http://localhost/%{name}/
 
 %prep
 %setup -qn APC-%{version}
-[ "../package*.xml" != "/" ] && mv ../package*.xml .
 
 %patch0 -p0
 

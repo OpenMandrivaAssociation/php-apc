@@ -1,2 +1,4 @@
+removed_sources:
+  APC-3.1.12.tgz: 75c90df3c4b31f7ffbb05145040ee9fa369f7598
 sources:
-  "APC-3.1.12.tgz": 75c90df3c4b31f7ffbb05145040ee9fa369f7598
+  APC-3.1.15.tgz: 5970c158cfa921fcdb1f63ce3a86661810d3f1e3
