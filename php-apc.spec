@@ -44,7 +44,7 @@ This package comes with four different flavours of APC (use only one of them):
 Summary:	Web admin GUI for %{realname}
 Group:		Development/PHP
 Requires:	apache-mod_php
-Requires:	%{name} = %{version}-%{release}
+Requires:	%{name} = %{EVRD}
 
 %description	admin
 This package contains a Web admin GUI for %{realname}.
