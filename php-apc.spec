@@ -8,7 +8,7 @@ Summary:	The %{realname} module for PHP
 Name:		php-%{modname}
 Epoch:		1
 Version:	3.1.15
-Release:	5
+Release:	6
 Group:		Development/PHP
 License:	PHP License
 Url:		http://pecl.php.net/package/APC
