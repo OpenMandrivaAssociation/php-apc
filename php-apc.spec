@@ -16,6 +16,7 @@ Source0:	http://pecl.php.net/get/APC-%{version}.tgz
 Source1:	apc.ini
 Patch0:		APC-3.1.3p1-default_lock_dir.diff
 Patch1:		APC-3.1.9-svn_fixes.diff
+Patch2:		APC-3.1.15-php56.diff
 BuildRequires:  php-devel >= 3:5.2.0
 Conflicts:	php-afterburner
 Conflicts:	php-mmcache
@@ -57,6 +58,7 @@ http://localhost/%{name}/
 %setup -qn APC-%{version}
 
 %patch0 -p0
+%patch2 -p1
 
 cp %{SOURCE1} %{inifile}
 

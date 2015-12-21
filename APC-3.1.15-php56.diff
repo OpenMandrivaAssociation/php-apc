@@ -1,0 +1,122 @@
+diff -Naurp APC-3.1.15/apc_bin.c APC-3.1.15.oden/apc_bin.c
+--- APC-3.1.15/apc_bin.c	2013-10-25 08:29:10.000000000 +0200
++++ APC-3.1.15.oden/apc_bin.c	2014-05-09 15:09:05.443311700 +0200
+@@ -484,7 +484,7 @@ static void apc_swizzle_zval(apc_bd_t *b
+             apc_swizzle_ptr(bd, ll, &zv->value.str.val);
+             break;
+         case IS_ARRAY:
+-        case IS_CONSTANT_ARRAY:
++        case IS_CONSTANT_AST:
+             apc_swizzle_hashtable(bd, ll, zv->value.ht, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
+             apc_swizzle_ptr(bd, ll, &zv->value.ht);
+             break;
+diff -Naurp APC-3.1.15/apc_cache.c APC-3.1.15.oden/apc_cache.c
+--- APC-3.1.15/apc_cache.c	2013-10-25 08:29:10.000000000 +0200
++++ APC-3.1.15.oden/apc_cache.c	2014-05-09 15:09:48.866311716 +0200
+@@ -815,9 +815,9 @@ int _apc_cache_user_update(apc_cache_t*
+     while (*slot) {
+         if ((h == (*slot)->key.h) &&
+             !memcmp((*slot)->key.data.user.identifier, strkey, keylen)) {
+-            switch(Z_TYPE_P((*slot)->value->data.user.val) & ~IS_CONSTANT_INDEX) {
++            switch(Z_TYPE_P((*slot)->value->data.user.val) & ~IS_CONSTANT_AST) {
+                 case IS_ARRAY:
+-                case IS_CONSTANT_ARRAY:
++                case IS_CONSTANT_AST:
+                 case IS_OBJECT:
+                 {
+                     if(APCG(serializer)) {
+diff -Naurp APC-3.1.15/apc_compile.c APC-3.1.15.oden/apc_compile.c
+--- APC-3.1.15/apc_compile.c	2013-10-25 08:29:10.000000000 +0200
++++ APC-3.1.15.oden/apc_compile.c	2014-05-09 15:09:55.744311719 +0200
+@@ -176,7 +176,7 @@ static void check_op_array_integrity(zen
+                        type == IS_STRING ||
+                        type == FLAG_IS_BC ||
+                        type == IS_ARRAY ||
+-                       type == IS_CONSTANT_ARRAY ||
++                       type == IS_CONSTANT_AST ||
+                        type == IS_OBJECT);
+             }
+         }
+@@ -250,7 +250,7 @@ static zval* my_serialize_object(zval* d
+     }
+ 
+     if(serialize((unsigned char**)&buf.c, &buf.len, src, config TSRMLS_CC)) {
+-        dst->type = src->type & ~IS_CONSTANT_INDEX; 
++        dst->type = src->type & ~IS_CONSTANT_AST; 
+         dst->value.str.len = buf.len;
+         CHECK(dst->value.str.val = apc_pmemcpy(buf.c, (buf.len + 1), pool TSRMLS_CC));
+     }
+@@ -353,7 +353,7 @@ static APC_HOTSPOT zval* my_copy_zval(zv
+         break;
+ 
+     case IS_ARRAY:
+-    case IS_CONSTANT_ARRAY:
++    case IS_CONSTANT_AST:
+         if(APCG(serializer) == NULL ||
+             ctxt->copy == APC_COPY_IN_OPCODE || ctxt->copy == APC_COPY_OUT_OPCODE) {
+ 
+@@ -1317,10 +1317,10 @@ if (!strcmp(varname->u.constant.value.st
+             case ZEND_RECV_INIT:
+ #ifdef ZEND_ENGINE_2_4
+                 if(zo->op2_type == IS_CONST &&
+-                    Z_TYPE_P(zo->op2.zv) == IS_CONSTANT_ARRAY) {
++                    Z_TYPE_P(zo->op2.zv) == IS_CONSTANT_AST) {
+ #else
+                 if(zo->op2.op_type == IS_CONST &&
+-                    zo->op2.u.constant.type == IS_CONSTANT_ARRAY) {
++                    zo->op2.u.constant.type == IS_CONSTANT_AST) {
+ #endif
+                     if(flags != NULL) {
+                         flags->deep_copy = 1;
+@@ -1330,14 +1330,14 @@ if (!strcmp(varname->u.constant.value.st
+             default:
+ #ifdef ZEND_ENGINE_2_4
+                 if((zo->op1_type == IS_CONST &&
+-                    Z_TYPE_P(zo->op1.zv) == IS_CONSTANT_ARRAY) ||
++                    Z_TYPE_P(zo->op1.zv) == IS_CONSTANT_AST) ||
+                     (zo->op2_type == IS_CONST &&
+-                        Z_TYPE_P(zo->op2.zv) == IS_CONSTANT_ARRAY)) {
++                        Z_TYPE_P(zo->op2.zv) == IS_CONSTANT_AST)) {
+ #else
+                 if((zo->op1.op_type == IS_CONST &&
+-                    zo->op1.u.constant.type == IS_CONSTANT_ARRAY) ||
++                    zo->op1.u.constant.type == IS_CONSTANT_AST) ||
+                     (zo->op2.op_type == IS_CONST &&
+-                        zo->op2.u.constant.type == IS_CONSTANT_ARRAY)) {
++                        zo->op2.u.constant.type == IS_CONSTANT_AST)) {
+ #endif
+                     if(flags != NULL) {
+                         flags->deep_copy = 1;
+@@ -1743,7 +1743,7 @@ static int my_prepare_op_array_for_execu
+                                         apc_php_malloc TSRMLS_CC);
+             end = p + src->last_literal;
+             while (p < end) {
+-                if (Z_TYPE(q->constant) == IS_CONSTANT_ARRAY) {
++                if (Z_TYPE(q->constant) == IS_CONSTANT_AST) {
+                     my_copy_zval(&p->constant, &q->constant, ctxt TSRMLS_CC);
+                 }
+                 p++;
+@@ -1771,9 +1771,9 @@ static int my_prepare_op_array_for_execu
+             }
+ #else
+             if( ((zo->op1.op_type == IS_CONST &&
+-                  zo->op1.u.constant.type == IS_CONSTANT_ARRAY)) ||
++                  zo->op1.u.constant.type == IS_CONSTANT_AST)) ||
+                 ((zo->op2.op_type == IS_CONST &&
+-                  zo->op2.u.constant.type == IS_CONSTANT_ARRAY))) {
++                  zo->op2.u.constant.type == IS_CONSTANT_AST))) {
+ 
+                 if(!(my_copy_zend_op(dzo, zo, ctxt TSRMLS_CC))) {
+                     assert(0); /* emalloc failed or a bad constant array */
+diff -Naurp APC-3.1.15/apc_php.h APC-3.1.15.oden/apc_php.h
+--- APC-3.1.15/apc_php.h	2013-10-25 08:29:10.000000000 +0200
++++ APC-3.1.15.oden/apc_php.h	2014-05-09 15:10:03.924311722 +0200
+@@ -67,7 +67,7 @@
+ #endif
+ 
+ #ifndef IS_CONSTANT_TYPE_MASK
+-#define IS_CONSTANT_TYPE_MASK (~IS_CONSTANT_INDEX)
++#define IS_CONSTANT_TYPE_MASK (~IS_CONSTANT_AST)
+ #endif
+ 
+ #include "rfc1867.h"
