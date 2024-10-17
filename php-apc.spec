@@ -11,7 +11,7 @@ Version:	3.1.15
 Release:	8
 Group:		Development/PHP
 License:	PHP License
-Url:		http://pecl.php.net/package/APC
+Url:		https://pecl.php.net/package/APC
 Source0:	http://pecl.php.net/get/APC-%{version}.tgz
 Source1:	apc.ini
 Patch0:		APC-3.1.3p1-default_lock_dir.diff
