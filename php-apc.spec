@@ -17,6 +17,11 @@ Source1:	apc.ini
 Patch0:		APC-3.1.3p1-default_lock_dir.diff
 Patch1:		APC-3.1.9-svn_fixes.diff
 Patch2:		APC-3.1.15-php56.diff
+BuildRequires:	autoconf
+BuildRequires:	automake
+BuildRequires:	libtool-base
+BuildRequires:	slibtool
+BuildRequires:	make
 BuildRequires:  php-devel >= 3:5.2.0
 Conflicts:	php-afterburner
 Conflicts:	php-mmcache
